@@ -1,10 +1,5 @@
-mod cli;
-mod macros;
-
-use cli::*;
+mod bytecode;
 
 fn main() {
-    let args: Vec<String> = std::env::args().collect();
-    let cli = Cli::handle_args(&args);
-    println!("{:?}", cli); // TODO: Let's work on other stuff first
+    println!("Test!");
 }
