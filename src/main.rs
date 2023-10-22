@@ -1,5 +1,9 @@
 mod bytecode;
+mod vm;
+
+use vm::VM;
 
 fn main() {
-    println!("Test!");
+    let mut vm = VM::new();
+    println!("{:#?}", vm);
 }
