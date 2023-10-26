@@ -3,11 +3,6 @@ use crate::create_bytecode;
 create_bytecode!(
     // VM Instructions
     exit = 0x00,
-    halt = 0x01,
-    dump = 0x02,
-    panic = 0x03,
-    debug = 0x04,
-    insert = 0x05,
     // Reserved Instructions
     abort = 0xFF,
 );
