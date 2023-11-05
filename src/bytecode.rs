@@ -13,15 +13,13 @@ macro_rules! create_bytecode {
         $($name:ident = $hex:tt,)*
     ) => {
         #[allow(non_camel_case_types)]
-        #[allow(unused_attributes)]
         pub enum Bytecode {
             $($name = $hex,)*
         }
 
-        #[allow(dead_code)]
-        pub fn get_bytecode(hex: &str) -> Bytecode {
-            match &format!("0x{}", hex)[..] {
-                $(stringify!($hex) => Bytecode::$name,)*
+        pub fn get_bytecode(hex: u8) -> Bytecode {
+            match hex {
+                $($hex => Bytecode::$name,)*
                 _ => panic!("Bytecode not find (WHAT)"),
             }
         }

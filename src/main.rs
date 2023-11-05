@@ -1,9 +1,11 @@
 mod bytecode;
-mod vm;
+mod stack;
+mod string_pool;
+mod virtual_machine;
 
-use vm::VM;
+use virtual_machine::*;
 
 fn main() {
-    let mut vm = VM::new();
+    let vm = VM::new();
     println!("{:#?}", vm);
 }
