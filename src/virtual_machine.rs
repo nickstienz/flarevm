@@ -3,6 +3,7 @@ use crate::{
     string_pool::StringPool,
 };
 
+// Registers (IP + 8xGPR)
 const NUMBER_OF_REGISTERS: usize = 9;
 pub const IP: usize = 0;
 

@@ -1,3 +1,5 @@
+const STACK_CAPACITY: usize = 64;
+
 #[derive(Debug)]
 pub struct Stack {
     pub data: Vec<StackItem>,
@@ -13,14 +15,14 @@ pub enum StackItem {
 impl Stack {
     pub fn new() -> Self {
         Self {
-            data: Vec::with_capacity(64),
+            data: Vec::with_capacity(STACK_CAPACITY),
             size: 0,
         }
     }
 
     pub fn push(&mut self, item: StackItem) {
-        self.data.push(item);
         self.size += 1;
+        self.data.push(item);
     }
 
     pub fn pop(&mut self) -> Option<StackItem> {
