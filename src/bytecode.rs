@@ -1,4 +1,5 @@
 use crate::create_bytecode;
+use crate::error::Error;
 
 create_bytecode!(
     // VM Instructions
@@ -20,7 +21,7 @@ macro_rules! create_bytecode {
         pub fn get_bytecode(hex: u8) -> Bytecode {
             match hex {
                 $($hex => Bytecode::$name,)*
-                _ => panic!("Bytecode not find (WHAT)"),
+                _ => Error::panic(Error::InvalidBytecode(hex)),
             }
         }
     };

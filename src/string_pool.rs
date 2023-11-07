@@ -26,4 +26,9 @@ impl StringPool {
             index
         }
     }
+
+    pub fn clear(&mut self) {
+        self.strings.clear();
+        self.string_indices.clear();
+    }
 }

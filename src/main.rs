@@ -1,21 +1,24 @@
 mod bytecode;
+mod error;
 mod stack;
 mod string_pool;
 mod virtual_machine;
 
+use bytecode::{get_bytecode, Bytecode::*};
 use virtual_machine::*;
 
 fn main() {
-    let mut vm = VM::new();
-    vm.set_register(IP, 28);
-    vm.push(stack::StackItem::I32(5));
-    vm.push(stack::StackItem::I32(7));
-    vm.push_string("hello");
-    vm.push_string("world");
-    vm.push_string("hello");
-    vm.push_string("hello");
-    vm.push_string("hello");
-    vm.push_string("hello");
+    let program: Vec<u8> = vec![0x00];
 
-    println!("{:#?}", vm);
+    let mut vm = VM::new(program);
+
+    loop {
+        let current_bytecode = get_bytecode(vm.value_at_ip());
+        vm.add_i64_to_register(IP, 1);
+
+        match current_bytecode {
+            exit => vm.clean_exit(),
+            abort => vm.abort(),
+        }
+    }
 }

@@ -29,4 +29,8 @@ impl Stack {
         self.size -= 1;
         self.data.pop()
     }
+
+    pub fn get_size(&self) -> u32 {
+        self.size
+    }
 }
