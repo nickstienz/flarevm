@@ -18,10 +18,10 @@ macro_rules! create_bytecode {
             $($name = $hex,)*
         }
 
-        pub fn get_bytecode(hex: u8) -> Bytecode {
+        pub fn get_bytecode(hex: u8) -> Result<Bytecode, Error> {
             match hex {
-                $($hex => Bytecode::$name,)*
-                _ => Error::panic(Error::InvalidBytecode(hex)),
+                $($hex => Ok(Bytecode::$name),)*
+                _ => Err(Error::InvalidBytecode(hex)),
             }
         }
     };

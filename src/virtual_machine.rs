@@ -1,4 +1,6 @@
 use crate::{
+    bytecode::{self, Bytecode},
+    error::Error,
     stack::{Stack, StackItem},
     string_pool::StringPool,
 };
@@ -26,18 +28,12 @@ impl VM {
         }
     }
 
-    pub fn value_at_ip(&self) -> u8 {
-        self.program[self.get_register(IP) as usize]
-    }
-
-    pub fn clean_exit(&mut self) -> ! {
-        self.unwind_stack(0);
-        self.string_pool.clear();
+    pub fn exit(&self) -> ! {
         std::process::exit(0);
     }
 
-    pub fn abort(&self) -> ! {
-        std::process::abort();
+    pub fn panic(&mut self, err: Error) -> ! {
+        Error::panic(self, err);
     }
 
     // Registers
@@ -51,6 +47,19 @@ impl VM {
 
     pub fn add_i64_to_register(&mut self, register: usize, value: i64) {
         self.registers[register] += value;
+    }
+
+    pub fn next_bytecode(&mut self) -> Bytecode {
+        let bytecode = self.program[self.get_register(IP) as usize];
+        self.add_i64_to_register(IP, 1);
+        match bytecode::get_bytecode(bytecode) {
+            Ok(bc) => bc,
+            Err(e) => self.panic(e),
+        }
+    }
+
+    pub fn clear_registers(&mut self) {
+        self.registers.iter_mut().for_each(|r| *r = 0);
     }
 
     // Stack
@@ -76,5 +85,10 @@ impl VM {
         while self.stack.get_size() > target_size {
             self.stack.data.pop();
         }
+    }
+
+    // String Pool
+    pub fn clear_strings(&mut self) {
+        self.string_pool.clear();
     }
 }
