@@ -1,4 +1,4 @@
-use crate::virtual_machine::VM;
+use crate::virtual_machine::{ER, VM};
 
 #[derive(Debug)]
 pub enum Error {
@@ -6,14 +6,15 @@ pub enum Error {
 }
 
 impl Error {
-    pub fn panic(vm: &mut VM, err: Error) -> ! {
+    pub fn panic(vm: &mut VM) -> ! {
+        let error_register = vm.get_register(ER);
         vm.clear_registers();
         vm.unwind_stack(0);
         vm.clear_strings();
 
         eprintln!(
             "[!] Panic with `crate::error::Error::panic` called {:?}!\n\\__[ {}\n   \\_ Program safely exited the FVM! ]",
-            err,
+            error_register,
             "Panics aren't currently handled!",
         );
 

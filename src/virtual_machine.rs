@@ -3,15 +3,18 @@ use crate::{
     error::Error,
     stack::{Stack, StackItem},
     string_pool::StringPool,
+    vm_info::VMInfo,
 };
 
-// Registers (IP + SP + 8xGPR)
-const NUMBER_OF_REGISTERS: usize = 10;
+// Registers (IP + SP + ER + 8xGPR)
+const NUMBER_OF_REGISTERS: usize = 11;
 pub const IP: usize = 0;
 pub const SP: usize = 1;
+pub const ER: usize = 2;
 
 #[derive(Debug)]
 pub struct VM {
+    vm_info: VMInfo,
     program: Vec<u8>,
     registers: [i64; NUMBER_OF_REGISTERS],
     stack: Stack,
@@ -19,8 +22,9 @@ pub struct VM {
 }
 
 impl VM {
-    pub fn new(program: Vec<u8>) -> Self {
+    pub fn new(vm_info: VMInfo, program: Vec<u8>) -> Self {
         Self {
+            vm_info,
             program,
             registers: [0; NUMBER_OF_REGISTERS],
             stack: Stack::new(),
@@ -30,10 +34,6 @@ impl VM {
 
     pub fn exit(&self) -> ! {
         std::process::exit(0);
-    }
-
-    pub fn panic(&mut self, err: Error) -> ! {
-        Error::panic(self, err);
     }
 
     // Registers
@@ -54,7 +54,7 @@ impl VM {
         self.add_i64_to_register(IP, 1);
         match bytecode::get_bytecode(bytecode) {
             Ok(bc) => bc,
-            Err(e) => self.panic(e),
+            Err(e) => panic!("{:?}", e),
         }
     }
 
