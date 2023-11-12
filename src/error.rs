@@ -1,21 +1,15 @@
-use crate::virtual_machine::{ER, VM};
-
 #[derive(Debug)]
 pub enum Error {
-    InvalidBytecode(u8),
+    InvalidBytecode,
+    RustPanic,
 }
 
 impl Error {
-    pub fn panic(vm: &mut VM) -> ! {
-        let error_register = vm.get_register(ER);
-        vm.clear_registers();
-        vm.unwind_stack(0);
-        vm.clear_strings();
-
+    pub fn panic(err: Error, msg: String) -> ! {
         eprintln!(
-            "[!] Panic with `crate::error::Error::panic` called {:?}!\n\\__[ {}\n   \\_ Program safely exited the FVM! ]",
-            error_register,
-            "Panics aren't currently handled!",
+            "[!] Panic with `crate::error::Error::panic` called {:?}!\n\\__[ {}\n   \\_ FVM safely exited! ]",
+            err,
+            msg,
         );
 
         std::process::exit(1);

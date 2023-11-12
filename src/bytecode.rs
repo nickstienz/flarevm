@@ -21,7 +21,7 @@ macro_rules! create_bytecode {
         pub fn get_bytecode(hex: u8) -> Result<Bytecode, Error> {
             match hex {
                 $($hex => Ok(Bytecode::$name),)*
-                _ => Err(Error::InvalidBytecode(hex)),
+                _ => Err(Error::InvalidBytecode),
             }
         }
     };
