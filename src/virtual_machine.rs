@@ -11,15 +11,15 @@ pub const IP: usize = 0;
 pub const SP: usize = 1;
 
 #[derive(Debug)]
-pub struct VM {
-    program: Vec<u8>,
+pub struct VM<'a> {
+    program: &'a [u8],
     registers: [i64; NUMBER_OF_REGISTERS],
     stack: Stack,
     string_pool: StringPool,
 }
 
-impl VM {
-    pub fn new(program: Vec<u8>) -> Self {
+impl<'a> VM<'a> {
+    pub fn new(program: &'a [u8]) -> Self {
         Self {
             program,
             registers: [0; NUMBER_OF_REGISTERS],
@@ -28,8 +28,8 @@ impl VM {
         }
     }
 
-    pub fn exit(&self) -> ! {
-        std::process::exit(0);
+    pub fn exit(&self, code: i32) -> ! {
+        std::process::exit(code);
     }
 
     pub fn vm_panic(&mut self, err: Error, msg: String) -> ! {
@@ -53,9 +53,8 @@ impl VM {
         self.registers[register] += value;
     }
 
-    pub fn next_bytecode(&mut self) -> Bytecode {
+    pub fn get_bytecode(&mut self) -> Bytecode {
         let bytecode = self.program[self.get_register(IP) as usize];
-        self.add_i64_to_register(IP, 1);
         match bytecode::get_bytecode(bytecode) {
             Ok(bc) => bc,
             Err(e) => self.vm_panic(e, format!("{:#04x} is not a valid bytecode", bytecode)),
@@ -82,12 +81,12 @@ impl VM {
 
     pub fn unwind_stack(&mut self, target_size: u32) {
         if target_size == 0 {
-            self.stack.data.clear();
+            self.stack.clear();
             return;
         }
 
         while self.stack.get_size() > target_size {
-            self.stack.data.pop();
+            self.stack.pop();
         }
     }
 

@@ -5,6 +5,7 @@ create_bytecode!(
     // VM Instructions
     exit = 0x00,
     // Reserved Instructions
+    nop = 0xFE,
     abort = 0xFF,
 );
 
