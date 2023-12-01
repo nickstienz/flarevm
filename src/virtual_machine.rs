@@ -8,7 +8,6 @@ use crate::{
 // Registers (IP + SP + 8xGPR)
 const NUMBER_OF_REGISTERS: usize = 10;
 pub const IP: usize = 0;
-pub const SP: usize = 1;
 
 #[derive(Debug)]
 pub struct VM<'a> {
@@ -28,7 +27,8 @@ impl<'a> VM<'a> {
         }
     }
 
-    pub fn exit(&self, code: i32) -> ! {
+    pub fn exit(&mut self) -> ! {
+        let code = self.next_byte() as i32;
         std::process::exit(code);
     }
 
@@ -37,7 +37,7 @@ impl<'a> VM<'a> {
         self.unwind_stack(0);
         self.clear_strings();
 
-        Error::panic(err, msg);
+        Error::panic(err, true, msg);
     }
 
     // Registers
@@ -59,6 +59,16 @@ impl<'a> VM<'a> {
             Ok(bc) => bc,
             Err(e) => self.vm_panic(e, format!("{:#04x} is not a valid bytecode", bytecode)),
         }
+    }
+
+    pub fn next_byte(&mut self) -> u8 {
+        self.add_i64_to_register(IP, 1);
+        self.program[self.get_register(IP) as usize]
+    }
+
+    pub fn next_n_bytes(&mut self, n: usize) -> &[u8] {
+        let ip = self.get_register(IP) as usize;
+        &self.program[ip..ip + n]
     }
 
     pub fn clear_registers(&mut self) {

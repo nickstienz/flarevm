@@ -13,6 +13,7 @@ fn main() {
     std::panic::set_hook(Box::new(|info| {
         Error::panic(
             Error::RustPanic,
+            false,
             format!(
                 "{}",
                 info.payload()
@@ -23,7 +24,7 @@ fn main() {
     }));
 
     // This is the gate to hell. I wish you luck traveler.
-    let program: Vec<u8> = vec![0xFE, 0xFE, 0xFE, 0x00];
+    let program: Vec<u8> = vec![0xFE, 0xFE, 0xFE, 0x00, 0x00];
 
     let mut vm = VM::new(&program);
 
@@ -31,7 +32,7 @@ fn main() {
         let bytecode = vm.get_bytecode();
 
         match bytecode {
-            exit => vm.exit(0),
+            exit => vm.exit(),
             nop => (),
             abort => Error::abort(),
         }

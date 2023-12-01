@@ -5,10 +5,16 @@ pub enum Error {
 }
 
 impl Error {
-    pub fn panic(err: Error, msg: String) -> ! {
+    pub fn panic(err: Error, safe: bool, msg: String) -> ! {
+        let exit_msg = if safe {
+            String::from("FVM safely exited!")
+        } else {
+            String::from("FVM paniced!")
+        };
+
         eprintln!(
-            "[!] Panic called {:?}!\n\\__[ {}\n   \\_ FVM safely exited! ]",
-            err, msg,
+            "[!] Panic called with {:?}!\n\\__[ {}\n   \\_ {} ]",
+            err, msg, exit_msg
         );
 
         std::process::exit(1);
