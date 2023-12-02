@@ -85,22 +85,11 @@ impl<'a> VM<'a> {
     }
 
     pub fn push_string(&mut self, string: &str) {
-        let index = self.string_pool.intern(string.as_ref());
+        let index = self.string_pool.intern(&string);
         self.stack.push(StackItem::String(index));
     }
 
     pub fn pop(&mut self) -> Option<StackItem> {
         self.stack.pop()
-    }
-
-    pub fn unwind_stack(&mut self, target_size: usize) {
-        if target_size == 0 {
-            self.stack.clear();
-            return;
-        }
-
-        while self.stack.get_size() > target_size {
-            self.stack.pop();
-        }
     }
 }

@@ -12,7 +12,7 @@ use virtual_machine::*;
 
 fn main() {
     // This is the gate to hell. I wish you luck traveler.
-    let program: Vec<u8> = vec![0x02, 0x01, 0xAB, 0xCD, 0x00, 0x00];
+    let program: Vec<u8> = vec![0x01, 0x01, 0xFE, 0x00, 0x00];
 
     let mut vm = VM::new(&program);
 

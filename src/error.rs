@@ -1,7 +1,6 @@
 #[derive(Debug)]
 pub enum Error {
     InvalidBytecode,
-    RustPanic,
     SliceTooSmall,
     SliceTooBig,
 }
