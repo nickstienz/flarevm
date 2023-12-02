@@ -11,6 +11,7 @@ use utils::*;
 use virtual_machine::*;
 
 fn main() {
+    // TODO: Rework this project bc OOP is hard man ;-;
     // This is the gate to hell. I wish you luck traveler.
     let program: Vec<u8> = vec![
         0x04, 0x0E, 0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x2C, 0x20, 0x57, 0x6F, 0x72, 0x6C, 0x64, 0x21,

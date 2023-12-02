@@ -93,6 +93,7 @@ impl<'a> VM<'a> {
         self.stack.pop()
     }
 
+    // String Pool
     pub fn get_string(&self, index: u32) -> &str {
         self.string_pool.get_string(index)
     }
