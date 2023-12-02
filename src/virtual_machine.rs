@@ -5,8 +5,8 @@ use crate::{
     string_pool::StringPool,
 };
 
-// Registers (IP + SP + 8xGPR)
-const NUMBER_OF_REGISTERS: usize = 10;
+// Registers (IP + 8xGPR)
+const NUMBER_OF_REGISTERS: usize = 9;
 pub const IP: usize = 0;
 
 #[derive(Debug)]
@@ -29,15 +29,16 @@ impl<'a> VM<'a> {
 
     pub fn exit(&mut self) -> ! {
         let code = self.next_byte() as i32;
+        println!("{:#?}", self);
         std::process::exit(code);
     }
 
     pub fn vm_panic(&mut self, err: Error, msg: String) -> ! {
         self.clear_registers();
-        self.unwind_stack(0);
-        self.clear_strings();
+        self.stack.clear();
+        self.string_pool.clear();
 
-        Error::panic(err, true, msg);
+        Error::panic(err, msg);
     }
 
     // Registers
@@ -67,8 +68,11 @@ impl<'a> VM<'a> {
     }
 
     pub fn next_n_bytes(&mut self, n: usize) -> &[u8] {
+        self.add_i64_to_register(IP, 1);
         let ip = self.get_register(IP) as usize;
-        &self.program[ip..ip + n]
+        let bytes = &self.program[ip..ip + n];
+        self.add_i64_to_register(IP, (n - 1) as i64);
+        bytes
     }
 
     pub fn clear_registers(&mut self) {
@@ -89,7 +93,7 @@ impl<'a> VM<'a> {
         self.stack.pop()
     }
 
-    pub fn unwind_stack(&mut self, target_size: u32) {
+    pub fn unwind_stack(&mut self, target_size: usize) {
         if target_size == 0 {
             self.stack.clear();
             return;
@@ -98,10 +102,5 @@ impl<'a> VM<'a> {
         while self.stack.get_size() > target_size {
             self.stack.pop();
         }
-    }
-
-    // String Pool
-    pub fn clear_strings(&mut self) {
-        self.string_pool.clear();
     }
 }

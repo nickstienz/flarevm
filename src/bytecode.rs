@@ -4,6 +4,10 @@ use crate::error::Error;
 create_bytecode!(
     // VM Instructions
     exit = 0x00,
+    // Register Instructions
+    ldb = 0x01, // Load Byte     (unsigned 8-Bit)
+    ldw = 0x02, // Load Word     (unsigned 16-Bit)
+    ldd = 0x03, // Load Double   (unsigned 32-Bit)
     // Reserved Instructions
     nop = 0xFE,
     abort = 0xFF,
