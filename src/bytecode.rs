@@ -8,6 +8,10 @@ create_bytecode!(
     ldb = 0x01, // Load Byte     (unsigned 8-Bit)
     ldw = 0x02, // Load Word     (unsigned 16-Bit)
     ldd = 0x03, // Load Double   (unsigned 32-Bit)
+    // Stack
+    pushs = 0x04, // Push String
+    // Output
+    print = 0x05, // Print
     // Reserved Instructions
     nop = 0xFE,
     abort = 0xFF,

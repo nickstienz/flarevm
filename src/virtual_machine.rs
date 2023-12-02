@@ -29,7 +29,6 @@ impl<'a> VM<'a> {
 
     pub fn exit(&mut self) -> ! {
         let code = self.next_byte() as i32;
-        println!("{:#?}", self);
         std::process::exit(code);
     }
 
@@ -67,10 +66,11 @@ impl<'a> VM<'a> {
         self.program[self.get_register(IP) as usize]
     }
 
-    pub fn next_n_bytes(&mut self, n: usize) -> &[u8] {
+    pub fn next_n_bytes(&mut self, n: usize) -> Vec<u8> {
         self.add_i64_to_register(IP, 1);
         let ip = self.get_register(IP) as usize;
-        let bytes = &self.program[ip..ip + n];
+        let mut bytes: Vec<u8> = vec![0; n];
+        bytes.copy_from_slice(&self.program[ip..ip + n]);
         self.add_i64_to_register(IP, (n - 1) as i64);
         bytes
     }
@@ -91,5 +91,9 @@ impl<'a> VM<'a> {
 
     pub fn pop(&mut self) -> Option<StackItem> {
         self.stack.pop()
+    }
+
+    pub fn get_string(&self, index: u32) -> &str {
+        self.string_pool.get_string(index)
     }
 }

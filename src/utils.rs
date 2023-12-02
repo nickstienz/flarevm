@@ -1,6 +1,5 @@
-use std::ops::{BitOrAssign, ShlAssign};
-
 use crate::error::Error;
+use std::ops::{BitOrAssign, ShlAssign};
 
 pub fn hex_to_int<T>(bytes: &[u8]) -> T
 where
@@ -30,4 +29,11 @@ where
     }
 
     value
+}
+
+pub fn hex_to_str(bytes: &[u8]) -> &str {
+    match std::str::from_utf8(bytes) {
+        Ok(s) => &s,
+        Err(e) => Error::panic(Error::ByteToStringError, e.to_string()),
+    }
 }
