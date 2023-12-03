@@ -1,9 +1,10 @@
+use crate::components::error::Error;
 use std::mem;
 
 const NUM_OF_REGISTERS: usize = 9;
 
 #[derive(Debug)]
-struct Registers {
+pub struct Registers {
     data: [u64; NUM_OF_REGISTERS],
 }
 
@@ -16,13 +17,19 @@ impl Registers {
 
     pub fn get_register<T: Default>(&self, reg: usize) -> T {
         if reg >= NUM_OF_REGISTERS {
-            panic!("(HANDLE) Register OOB");
+            Error::panic(
+                Error::RegisterOutOfBounds,
+                format!("Register {} is > {}", reg, NUM_OF_REGISTERS),
+            );
         }
 
         let size = mem::size_of::<T>();
 
         if size > mem::size_of::<u64>() {
-            panic!("(HANDLE) Size > u64");
+            Error::panic(
+                Error::TypeSizeTooLarge,
+                format!("Size({}) > U64({})", size, mem::size_of::<u64>()),
+            );
         }
 
         let target_ptr = &self.data[reg] as *const u64 as *const u8;
@@ -39,13 +46,19 @@ impl Registers {
 
     pub fn set_register<T>(&mut self, reg: usize, value: T) {
         if reg >= NUM_OF_REGISTERS {
-            panic!("(HANDLE) Register OOB");
+            Error::panic(
+                Error::RegisterOutOfBounds,
+                format!("Register {} is > {}", reg, NUM_OF_REGISTERS),
+            );
         }
 
         let size = mem::size_of::<T>();
 
         if size > mem::size_of::<u64>() {
-            panic!("(HANDLE) Size > u64");
+            Error::panic(
+                Error::TypeSizeTooLarge,
+                format!("Size({}) > U64({})", size, mem::size_of::<u64>()),
+            );
         }
 
         let target_ptr = &mut self.data[reg] as *mut u64 as *mut u8;
