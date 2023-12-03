@@ -34,6 +34,6 @@ where
 pub fn hex_to_str(bytes: &[u8]) -> &str {
     match std::str::from_utf8(bytes) {
         Ok(s) => &s,
-        Err(e) => Error::panic(Error::ByteToStringError, e.to_string()),
+        Err(e) => Error::panic(Error::ByteToString, e.to_string()),
     }
 }

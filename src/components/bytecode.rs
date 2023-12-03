@@ -1,5 +1,5 @@
+use crate::components::error::Error;
 use crate::create_bytecode;
-use crate::error::Error;
 
 create_bytecode!(
     // VM Instructions

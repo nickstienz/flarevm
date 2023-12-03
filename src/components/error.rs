@@ -3,7 +3,7 @@ pub enum Error {
     InvalidBytecode,
     SliceTooSmall,
     SliceTooBig,
-    ByteToStringError,
+    ByteToString,
 }
 
 impl Error {
