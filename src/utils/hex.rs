@@ -1,7 +1,7 @@
-use crate::error::Error;
+use crate::components::error::Error;
 use std::ops::{BitOrAssign, ShlAssign};
 
-pub fn hex_to_int<T>(bytes: &[u8]) -> T
+pub fn to_int<T>(bytes: &[u8]) -> T
 where
     T: ShlAssign + BitOrAssign + From<u8> + Copy,
 {
@@ -31,7 +31,7 @@ where
     value
 }
 
-pub fn hex_to_str(bytes: &[u8]) -> &str {
+pub fn to_str(bytes: &[u8]) -> &str {
     match std::str::from_utf8(bytes) {
         Ok(s) => &s,
         Err(e) => Error::panic(Error::ByteToString, e.to_string()),
