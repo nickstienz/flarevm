@@ -115,7 +115,7 @@ mod tests {
     #[test]
     fn set_register_i64() {
         let mut r = Registers::new();
-        r.set_register::<i64>(0, 420i64);
+        r.set_register::<i64>(0, 420);
         let r0: i64 = r.get_register(0);
         assert_eq!(r0, 420i64);
     }
