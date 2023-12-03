@@ -4,16 +4,16 @@ pub enum Error {
     SliceTooSmall,
     SliceTooBig,
     ByteToString,
+    RegisterOutOfBounds,
+    TypeSizeTooLarge,
 }
 
 impl Error {
     pub fn panic(err: Error, msg: String) -> ! {
-        eprintln!(
+        panic!(
             "[!] Panic called with {:?}!\n\\__[ {}\n   \\_ FVM exited! ]",
             err, msg
         );
-
-        std::process::exit(1);
     }
 
     pub fn abort() -> ! {
