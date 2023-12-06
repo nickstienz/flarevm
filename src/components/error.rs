@@ -6,6 +6,7 @@ pub enum Error {
     ByteToString,
     RegisterOutOfBounds,
     TypeSizeTooLarge,
+    TypesDontMatch,
 }
 
 impl Error {
