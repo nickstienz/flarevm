@@ -4,17 +4,6 @@ use std::{mem, ptr};
 
 const NUM_OF_REGISTERS: usize = 9;
 
-types_to_enums!(
-    i8 = I8,
-    u8 = U8,
-    i16 = I16,
-    u16 = U16,
-    i32 = I32,
-    u32 = U32,
-    i64 = I64,
-    u64 = U64,
-);
-
 #[derive(Debug)]
 pub struct Registers {
     data: [u64; NUM_OF_REGISTERS],
@@ -86,6 +75,17 @@ impl Registers {
     }
 }
 
+types_to_enums!(
+    i8 = I8,
+    u8 = U8,
+    i16 = I16,
+    u16 = U16,
+    i32 = I32,
+    u32 = U32,
+    i64 = I64,
+    u64 = U64,
+);
+
 #[macro_export]
 macro_rules! types_to_enums {
     (
@@ -149,6 +149,14 @@ mod tests {
         r.set_register::<u8>(0, 69);
         let r0: u8 = r.get_register(0);
         assert_eq!(r0, 69u8);
+    }
+
+    #[test]
+    fn set_register_i16() {
+        let mut r = Registers::new();
+        r.set_register::<i16>(0, 265);
+        let r0: i16 = r.get_register(0);
+        assert_eq!(r0, 265i16);
     }
 
     #[test]
