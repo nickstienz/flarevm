@@ -1,8 +1,19 @@
 use crate::components::error::Error;
-use crate::types_to_enums;
+use crate::create_register_types;
 use std::{mem, ptr};
 
 const NUM_OF_REGISTERS: usize = 9;
+
+create_register_types!(
+    i8 = I8,
+    u8 = U8,
+    i16 = I16,
+    u16 = U16,
+    i32 = I32,
+    u32 = U32,
+    i64 = I64,
+    u64 = U64,
+);
 
 #[derive(Debug)]
 pub struct Registers {
@@ -22,7 +33,7 @@ impl Registers {
     where
         T: Copy + TypeInfo,
     {
-        self.safety_checks::<T>(reg);
+        self.check_bounds(reg);
 
         let value_type = T::type_of();
         let reg_type = self.types[reg];
@@ -34,16 +45,16 @@ impl Registers {
             )
         }
 
-        let target_ptr = &self.data[reg] as *const u64;
+        let target_ptr = &self.data[reg] as *const u64 as *const T;
 
-        unsafe { *(target_ptr as *const T) }
+        unsafe { *target_ptr }
     }
 
     pub fn set_register<T>(&mut self, reg: usize, value: T)
     where
         T: TypeInfo,
     {
-        self.safety_checks::<T>(reg);
+        self.check_bounds(reg);
 
         self.types[reg] = T::type_of();
 
@@ -56,38 +67,18 @@ impl Registers {
         }
     }
 
-    fn safety_checks<T>(&self, reg: usize) {
+    fn check_bounds(&self, reg: usize) {
         if reg >= NUM_OF_REGISTERS {
             Error::panic(
                 Error::RegisterOutOfBounds,
                 format!("Register {} is > {}", reg, NUM_OF_REGISTERS),
             );
         }
-
-        let size = mem::size_of::<T>();
-
-        if size > mem::size_of::<u64>() {
-            Error::panic(
-                Error::TypeSizeTooLarge,
-                format!("Size({}) > U64({})", size, mem::size_of::<u64>()),
-            );
-        }
     }
 }
 
-types_to_enums!(
-    i8 = I8,
-    u8 = U8,
-    i16 = I16,
-    u16 = U16,
-    i32 = I32,
-    u32 = U32,
-    i64 = I64,
-    u64 = U64,
-);
-
 #[macro_export]
-macro_rules! types_to_enums {
+macro_rules! create_register_types {
     (
         $($rtype:ty = $renum:ident,)*
     ) => {
