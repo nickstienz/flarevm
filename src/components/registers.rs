@@ -31,7 +31,7 @@ impl Registers {
 
     pub fn get_register<T>(&self, reg: usize) -> T
     where
-        T: Copy + TypeInfo,
+        T: Copy + TypeInfo + TryFrom<u64>,
     {
         self.check_bounds(reg);
 
@@ -45,9 +45,10 @@ impl Registers {
             )
         }
 
-        let target_ptr = &self.data[reg] as *const u64 as *const T;
-
-        unsafe { *target_ptr }
+        match self.data[reg].try_into() {
+            Ok(v) => v,
+            Err(_) => panic!("Oh no..."),
+        }
     }
 
     pub fn set_register<T>(&mut self, reg: usize, value: T)

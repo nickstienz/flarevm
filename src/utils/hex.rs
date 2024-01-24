@@ -1,4 +1,5 @@
 use crate::components::error::Error;
+use std::cmp::Ordering;
 use std::ops::{BitOrAssign, ShlAssign};
 
 pub fn to_int<T>(bytes: &[u8]) -> T
@@ -6,19 +7,18 @@ where
     T: ShlAssign + BitOrAssign + From<u8> + Copy,
 {
     let size = std::mem::size_of::<T>();
+    let len = bytes.len();
 
-    if bytes.len() < size {
-        Error::panic(
+    match size.cmp(&len) {
+        Ordering::Less => Error::panic(
             Error::SliceTooSmall,
-            format!("Bytes ({}) < Size ({})", bytes.len(), size),
-        );
-    }
-
-    if bytes.len() > size {
-        Error::panic(
+            format!("Bytes ({}) < Size ({})", len, size),
+        ),
+        Ordering::Greater => Error::panic(
             Error::SliceTooBig,
-            format!("Bytes ({}) > Size ({})", bytes.len(), size),
-        );
+            format!("Bytes ({}) > Size ({})", len, size),
+        ),
+        Ordering::Equal => (),
     }
 
     let mut value = T::from(bytes[0]);
