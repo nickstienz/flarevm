@@ -47,7 +47,9 @@ impl Registers {
 
         match self.data[reg].try_into() {
             Ok(v) => v,
-            Err(_) => panic!("Oh no..."),
+            Err(e) => Error::panic(
+                // TODO
+            ),
         }
     }
 
