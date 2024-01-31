@@ -2,7 +2,6 @@ mod components;
 mod utils;
 
 fn main() {
-    // This is the gate to hell. I wish you luck traveler.
     let program: Vec<u8> = vec![
         /* This prints "Hello, World!\n"
         pushs 15, "Hello, World!\n"
