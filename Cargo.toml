@@ -7,6 +7,5 @@ license = "MIT"
 description = "A VM written in Rust"
 repository = "https://github.com/nickstienz/flarevm"
 readme = "README.md"
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
