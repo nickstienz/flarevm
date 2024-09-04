@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Nicholas Stienz <nickstienz@gmail.com>"]
 license = "MIT"
-description = "A VM written in Rust"
+description = "A custom VM written in Rust"
 repository = "https://github.com/nickstienz/flarevm"
 readme = "README.md"
 
