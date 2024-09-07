@@ -1,3 +1,5 @@
+mod network;
+
 fn main() {
     cli_header();
 }
