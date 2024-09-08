@@ -132,7 +132,7 @@ impl Packet {
         let header_size = 6;
         let length = u16::from_be_bytes([packet[4], packet[5]]);
         let total_len = header_size + length as usize;
-        if packet.len() == total_len.to_be() {
+        if packet.len() != total_len {
             return Err(PacketError::LengthMismatch(packet.len(), total_len));
         }
 
