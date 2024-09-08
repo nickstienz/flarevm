@@ -1,19 +1,21 @@
+use network::shared::packet::Packet;
+
 pub mod network;
 
 fn main() {
     cli_header();
+
     let p = network::shared::packet::Packet::new(
         network::shared::packet::PacketType::None,
-        vec![0x01, 0x02, 0x03],
+        vec![0x01, 0x02, 0x03, 0x04, 0xA3, 0x17, 0xDC, 0x0A],
     );
 
-    println!("Packet 1: {:#?}", p);
-    println!("Packet 1 encoded: {:?}", p.encode_packet());
+    println!("Packet: {:#?}", p);
+    println!("Packet encoded: {:?}", p.encode_packet());
 
-    let p2 =
-        network::shared::packet::Packet::new(network::shared::packet::PacketType::None, Vec::new());
-    println!("Packet 2: {:#?}", p2);
-    println!("Packet 2 encoded: {:?}", p2.encode_packet());
+    // Decode
+    let dec = Packet::decode_packet(&p.encode_packet());
+    println!("Packet decoded{:#?}", dec);
 }
 
 fn cli_header() {

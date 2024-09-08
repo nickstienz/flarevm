@@ -3,9 +3,9 @@
 const MAGIC_NUMBER: u16 = 0xAD01;
 /// Current version of the packet implementation
 const VERSION: u8 = 0;
-/// This is the type the checksum will use. It is also used when computing the
+/// This is the size the checksum should be in bytes (u16). It is also used when computing the
 /// `length` field of the packet so it must be consistant.
-type ChecksumType = u16;
+const CHECKSUM_SIZE: usize = 2;
 
 /// The packet is used to send data between the server and client to
 /// interact with the VM.
@@ -32,7 +32,7 @@ pub struct Packet {
     data: Vec<u8>,
     /// The checksum is used to validate that the packet hasen't been corupted
     /// in some way.
-    checksum: ChecksumType,
+    checksum: u16,
 }
 
 impl Packet {
@@ -44,7 +44,7 @@ impl Packet {
             magic_number: MAGIC_NUMBER,
             version: VERSION,
             p_type,
-            length: (data.len() + size_of::<ChecksumType>()) as u16,
+            length: (data.len() + CHECKSUM_SIZE) as u16,
             data,
             checksum: 0, // Temp value
         };
@@ -53,6 +53,24 @@ impl Packet {
         complete_data.extend_from_slice(&p.data);
         p.checksum = Packet::calculate_checksum(&complete_data);
         p
+    }
+
+    pub fn from_data(
+        magic_number: u16,
+        version: u8,
+        p_type: PacketType,
+        length: u16,
+        data: Vec<u8>,
+        checksum: u16,
+    ) -> Self {
+        Self {
+            magic_number,
+            version,
+            p_type,
+            length,
+            data,
+            checksum,
+        }
     }
 
     /// The `encode_packet()` function will return a vector of `u8` that
@@ -71,8 +89,47 @@ impl Packet {
         bytes
     }
 
-    pub fn decode_packet() -> Result<Packet, PacketError> {
-        unimplemented!()
+    pub fn decode_packet(packet: &[u8]) -> Result<Packet, PacketError> {
+        if packet.len() < 8 {
+            return Err(PacketError::TooShort(packet.len()));
+        }
+
+        let magic_number = u16::from_be_bytes([packet[0], packet[1]]);
+        if magic_number != MAGIC_NUMBER {
+            return Err(PacketError::NotFVMPacket);
+        }
+
+        let version = packet[2];
+        if version != VERSION {
+            return Err(PacketError::WrongVersion(version));
+        }
+
+        let p_type = PacketType::from_u8(packet[3]);
+
+        let header_size = 6;
+        let length = u16::from_be_bytes([packet[4], packet[5]]);
+        let total_len = header_size + length as usize;
+        if packet.len() == total_len.to_be() {
+            return Err(PacketError::LengthMismatch(packet.len(), total_len));
+        }
+
+        let data = packet[header_size..header_size + length as usize - CHECKSUM_SIZE].to_vec();
+
+        let checksum = u16::from_be_bytes([packet[total_len - 2], packet[total_len - 1]]);
+        let computed_checksum = Packet::calculate_checksum(&packet[..total_len - CHECKSUM_SIZE]);
+
+        if checksum != computed_checksum {
+            return Err(PacketError::ChecksumMismatch(checksum, computed_checksum));
+        }
+
+        Ok(Packet::from_data(
+            magic_number,
+            version,
+            p_type,
+            length,
+            data,
+            checksum,
+        ))
     }
 
     fn generate_header(&self) -> Vec<u8> {
@@ -84,20 +141,22 @@ impl Packet {
         bytes
     }
 
-    pub fn calculate_checksum(data: &[u8]) -> ChecksumType {
+    pub fn calculate_checksum(data: &[u8]) -> u16 {
+        assert_eq!(CHECKSUM_SIZE, 2); // Check size of ChecksumType
+
         let mut checksum: u32 = 0;
 
         for chunk in data.chunks(2) {
             let word = match chunk.len() {
-                2 => (chunk[0] as ChecksumType) << 8 | (chunk[1] as ChecksumType),
-                1 => (chunk[0] as ChecksumType) << 8,
+                2 => (chunk[0] as u16) << 8 | (chunk[1] as u16),
+                1 => (chunk[0] as u16) << 8,
                 _ => 0,
             };
             checksum = checksum.wrapping_add(word as u32);
         }
 
         checksum = (checksum & 0xFFFF) + (checksum >> 16);
-        !checksum as ChecksumType
+        !checksum as u16
     }
 }
 
@@ -115,8 +174,22 @@ pub enum PacketType {
     None = 0xFF,
 }
 
+impl PacketType {
+    pub fn from_u8(p_type: u8) -> PacketType {
+        match p_type {
+            0xFF => PacketType::None,
+            _ => panic!("Handle error"),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub enum PacketError {
     NotFVMPacket,
+    TooShort(usize),
+    WrongVersion(u8),
+    LengthMismatch(usize, usize),
+    ChecksumMismatch(u16, u16),
 }
 
 #[cfg(test)]
