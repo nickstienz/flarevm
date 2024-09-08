@@ -120,8 +120,9 @@ impl Packet {
             return Err(PacketError::WrongVersion(version));
         }
 
-        // TODO: Handle errors
-        let p_type = PacketType::from_u8(packet[3]);
+        // The error from this function is passed to the caller if the
+        // `PacketType` does not exist based on the provided `u8`
+        let p_type = PacketType::from_u8(packet[3])?;
 
         // This part has a lot to take in but it just checks to make sure
         // that the length of the (data + checksum) is valid or not.
@@ -220,9 +221,12 @@ pub enum PacketError {
     /// what the packet says it has. This can happen if the packet gets
     /// fragmented over the network or is just damaged.
     LengthMismatch(usize, usize),
-    /// Thiss error handles when the checksums do not match preventing any
+    /// This error handles when the checksums do not match preventing any
     /// corrupted packets from being processed.
     ChecksumMismatch(u16, u16),
+    /// This error handles when the `PacketType::to_u8` function cannot
+    /// match the provided `u8` to a `PacketType`.
+    InvalidPacketType(u8),
 }
 
 #[macro_export]
@@ -253,12 +257,12 @@ macro_rules! create_packet_types {
             /// The `from_u8` function converts a `u8` into a `PacketType`.
             ///
             /// This process is just a large `match` with all values possible.
-            pub fn from_u8(p_type: u8) -> Self {
+            pub fn from_u8(p_type: u8) -> Result<Self, PacketError> {
                 match p_type {
                     $(
-                        $value => PacketType::$name,
+                        $value => Ok(PacketType::$name),
                     )*
-                    _ => panic!("Handle errors!"),
+                    _ => Err(PacketError::InvalidPacketType(p_type)),
                 }
             }
         }
