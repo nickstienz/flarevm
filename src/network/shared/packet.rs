@@ -1,3 +1,5 @@
+use crate::create_packet_types;
+
 /// The magic number that will not change. It will always be `0xAD01` and will
 /// be used to identify that it is a packet made for the VM.
 const MAGIC_NUMBER: u16 = 0xAD01;
@@ -160,27 +162,48 @@ impl Packet {
     }
 }
 
-/// The `PacketType` is used to detemine what actions the VM must take
-/// to interpret the data being passed to it.
-///
-/// All types are given a number in the `u8` range `(0-255 or 0x00-0xFF)` used
-/// to identify it in the final packet. This number should not be changed
-/// unless necessary and if it is, the `VERSION` constant should be incremented
-/// to reflect that the change will break other versions.
-#[repr(u8)]
-#[derive(Debug, Clone, Copy)]
-pub enum PacketType {
-    /// The `None` type is used for testing and will be ignored by the VM.
+create_packet_types!(
+    /// The `None` type is used for testing and is not recognized internally
+    /// so it will be skipped or throw an error all depending on the
+    /// implementation.
     None = 0xFF,
-}
+);
 
-impl PacketType {
-    pub fn from_u8(p_type: u8) -> PacketType {
-        match p_type {
-            0xFF => PacketType::None,
-            _ => panic!("Handle error"),
+#[macro_export]
+macro_rules! create_packet_types {
+    (
+        $(
+            $(#[$meta:meta])*
+            $name:ident = $value:expr
+        ),* $(,)?
+    ) => {
+        /// The `PacketType` is used to detemine what actions the VM must take
+        /// to interpret the data being passed to it.
+        ///
+        /// All types are given a number in the `u8` range `(0-255 or 0x00-0xFF)` used
+        /// to identify it in the final packet. This number should not be changed
+        /// unless necessary and if it is, the `VERSION` constant should be incremented
+        /// to reflect that the change will break other versions.
+        #[repr(u8)]
+        #[derive(Debug, Clone, Copy)]
+        pub enum PacketType {
+            $(
+                $(#[$meta])*
+                $name = $value,
+            )*
         }
-    }
+
+        impl PacketType {
+            pub fn from_u8(p_type: u8) -> Self {
+                match p_type {
+                    $(
+                        $value => PacketType::$name,
+                    )*
+                    _ => panic!("Handle errors!"),
+                }
+            }
+        }
+    };
 }
 
 #[derive(Debug)]
@@ -191,7 +214,6 @@ pub enum PacketError {
     LengthMismatch(usize, usize),
     ChecksumMismatch(u16, u16),
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -202,7 +224,7 @@ mod tests {
 
         assert_eq!(
             p.encode_packet(),
-            vec![0xAD, 0x01, 0x00, 0xFF, 0x00, 0x02, 0x00, 0x00]
+            vec![0xAD, 0x01, 0x00, 0xFF, 0x00, 0x02, 81, 253]
         );
     }
 }
