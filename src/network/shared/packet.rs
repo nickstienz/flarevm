@@ -12,7 +12,8 @@ const CHECKSUM_SIZE: usize = 2;
 /// The packet is used to send data between the server and client to
 /// interact with the VM.
 ///
-/// The packets will be sent using the TCP protocal.
+/// The structure of the packet is the same as the `Packet` struct.
+/// Most of the data is coded to specifically use big endian format.
 ///
 /// The header is 6 bytes long and after that is the data and checksum.
 #[derive(Debug)]
@@ -167,7 +168,7 @@ impl Packet {
         bytes
     }
 
-    /// The `calculate_checksum` function does all the validation magic and
+    /// The `calculate_checksum()` function does all the validation magic and
     /// is fairly simple. The checksum is just the (header + data) being
     /// read two bytes at a time and added together. Do some bit magic and
     /// it's done.
