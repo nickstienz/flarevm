@@ -30,10 +30,10 @@ pub struct Packet {
     /// The length represents how many bytes come after the header.
     /// The length is computed by doing `data + checksum`.
     length: u16,
-    /// The data being passed around. It's a collection of 8-bit values.
+    /// The data being passed around. It's a vector of 8-bit values.
     data: Vec<u8>,
     /// The checksum is used to validate that the packet hasen't been corupted
-    /// in some way.
+    /// in any way.
     checksum: u16,
 }
 
@@ -42,7 +42,7 @@ impl Packet {
     /// `PacketType` and data (`[u8]`). It can then be converted to binary
     /// for sending over the internet.
     pub fn new(p_type: PacketType, data: Vec<u8>) -> Self {
-        let mut p = Packet {
+        let mut packet = Packet {
             magic_number: MAGIC_NUMBER,
             version: VERSION,
             p_type,
@@ -51,12 +51,15 @@ impl Packet {
             checksum: 0, // Temp value
         };
 
-        let mut complete_data: Vec<u8> = p.generate_header();
-        complete_data.extend_from_slice(&p.data);
-        p.checksum = Packet::calculate_checksum(&complete_data);
-        p
+        let mut complete_data: Vec<u8> = packet.generate_header();
+        complete_data.extend_from_slice(&packet.data);
+        packet.checksum = Packet::calculate_checksum(&complete_data);
+        packet
     }
 
+    /// The `from_data()` function will create a new packet based on the
+    /// provided data. Its primary use is constructing a new packet
+    /// from a transported packet in the decoding stage.
     pub fn from_data(
         magic_number: u16,
         version: u8,
@@ -76,7 +79,8 @@ impl Packet {
     }
 
     /// The `encode_packet()` function will return a vector of `u8` that
-    /// represents the original packet.
+    /// represents the original packet. This is used to send the data
+    /// accross the network.
     ///
     /// This will convert any none numerical data types into numerical ones
     /// while organizing everything into the final structure.
@@ -91,23 +95,39 @@ impl Packet {
         bytes
     }
 
+    /// The `decode_packet` function takes a slice of `u8` values and attempt
+    /// to convert it into a new packet.
+    ///
+    /// This function has many stages in which it can error so the errors are
+    /// sent back to the caller using the `Result` type. Code comments can be
+    /// found in the source explaining the different stages to complete the
+    /// decoding process.
     pub fn decode_packet(packet: &[u8]) -> Result<Packet, PacketError> {
+        // Make sure the packet has at least a (header + checksum)
         if packet.len() < 8 {
             return Err(PacketError::TooShort(packet.len()));
         }
 
+        // Make sure the packet belongs to the VM
         let magic_number = u16::from_be_bytes([packet[0], packet[1]]);
         if magic_number != MAGIC_NUMBER {
             return Err(PacketError::NotFVMPacket);
         }
 
+        // Make sure the version is the same
         let version = packet[2];
         if version != VERSION {
             return Err(PacketError::WrongVersion(version));
         }
 
+        // TODO: Handle errors
         let p_type = PacketType::from_u8(packet[3]);
 
+        // This part has a lot to take in but it just checks to make sure
+        // that the length of the (data + checksum) is valid or not.
+        // It's important to note that the length is computed with both the
+        // length of the data plus the checksum (data + checksum) so later
+        // checks must account for that.
         let header_size = 6;
         let length = u16::from_be_bytes([packet[4], packet[5]]);
         let total_len = header_size + length as usize;
@@ -115,11 +135,12 @@ impl Packet {
             return Err(PacketError::LengthMismatch(packet.len(), total_len));
         }
 
+        // Grab all the data but leave the last to bytes as they are the checksum
         let data = packet[header_size..header_size + length as usize - CHECKSUM_SIZE].to_vec();
 
+        // Compute and validate the checksum
         let checksum = u16::from_be_bytes([packet[total_len - 2], packet[total_len - 1]]);
         let computed_checksum = Packet::calculate_checksum(&packet[..total_len - CHECKSUM_SIZE]);
-
         if checksum != computed_checksum {
             return Err(PacketError::ChecksumMismatch(checksum, computed_checksum));
         }
@@ -134,6 +155,8 @@ impl Packet {
         ))
     }
 
+    /// The `generate_header()` function simply returns back the 6 byte header
+    /// that makes up the final packet.
     fn generate_header(&self) -> Vec<u8> {
         let mut bytes: Vec<u8> = Vec::new();
         bytes.extend_from_slice(&self.magic_number.to_be_bytes());
@@ -143,6 +166,15 @@ impl Packet {
         bytes
     }
 
+    /// The `calculate_checksum` function does all the validation magic and
+    /// is fairly simple. The checksum is just the (header + data) being
+    /// read two bytes at a time and added together. Do some bit magic and
+    /// it's done.
+    ///
+    /// At the top of this function is an `assert_eq` to make sure the
+    /// `CHECKSUM_SIZE` is still equal to 2 just in case it gets changed and
+    /// this implementation doesn't handle that. There is also a unit test for
+    /// that same value as it determines a ton on how the checksum is computed.
     pub fn calculate_checksum(data: &[u8]) -> u16 {
         assert_eq!(CHECKSUM_SIZE, 2); // Check size of ChecksumType
 
@@ -162,12 +194,36 @@ impl Packet {
     }
 }
 
+// The `PacketType` macro to handle the creation of the enum and `to_u8`
+// function.
 create_packet_types!(
     /// The `None` type is used for testing and is not recognized internally
     /// so it will be skipped or throw an error all depending on the
     /// implementation.
     None = 0xFF,
 );
+
+/// The `PacketError` enum is used in `Result` in order to inform other
+/// parts of the VM about any errors that have happened internally to the
+/// packet system. Some include data about the error while others don't.
+#[derive(Debug)]
+pub enum PacketError {
+    /// This error handles when the packet does not match the `MAGIC_NUMBER`.
+    NotFVMPacket,
+    /// This error handles when the packet is less than 8 bytes long.
+    /// This should never happen so long as the header and checksum are right.
+    TooShort(usize),
+    /// This error handles when the version fields don't match from the packet
+    /// and VM. This stops the VM from handling older or newer packet types.
+    WrongVersion(u8),
+    /// This error handles when the length of the data does not match that of
+    /// what the packet says it has. This can happen if the packet gets
+    /// fragmented over the network or is just damaged.
+    LengthMismatch(usize, usize),
+    /// Thiss error handles when the checksums do not match preventing any
+    /// corrupted packets from being processed.
+    ChecksumMismatch(u16, u16),
+}
 
 #[macro_export]
 macro_rules! create_packet_types {
@@ -194,6 +250,9 @@ macro_rules! create_packet_types {
         }
 
         impl PacketType {
+            /// The `from_u8` function converts a `u8` into a `PacketType`.
+            ///
+            /// This process is just a large `match` with all values possible.
             pub fn from_u8(p_type: u8) -> Self {
                 match p_type {
                     $(
@@ -206,17 +265,14 @@ macro_rules! create_packet_types {
     };
 }
 
-#[derive(Debug)]
-pub enum PacketError {
-    NotFVMPacket,
-    TooShort(usize),
-    WrongVersion(u8),
-    LengthMismatch(usize, usize),
-    ChecksumMismatch(u16, u16),
-}
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn validate_checksum_size() {
+        assert_eq!(CHECKSUM_SIZE, 2);
+    }
 
     #[test]
     fn create_empty_packet_as_bytes() {
