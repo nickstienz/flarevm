@@ -197,7 +197,7 @@ impl Packet {
     }
 }
 
-// The `PacketType` macro to handle the creation of the enum and `to_u8`
+// The `PacketType` macro to handle the creation of the enum and `from_u8`
 // function.
 create_packet_types!(
     /// The `None` type is used for testing and is not recognized internally
