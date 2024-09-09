@@ -9,6 +9,8 @@ fn main() {
     );
 
     println!("===Original Packet===\n{:#?}\n", p);
+
+    // Encode
     println!("Packet encoded: {:?}\n", p.encode_packet());
 
     // Decode

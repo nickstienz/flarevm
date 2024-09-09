@@ -177,6 +177,7 @@ impl Packet {
     /// `CHECKSUM_SIZE` is still equal to 2 just in case it gets changed and
     /// this implementation doesn't handle that. There is also a unit test for
     /// that same value as it determines a ton on how the checksum is computed.
+    // TODO: Replace with CRC-16
     pub fn calculate_checksum(data: &[u8]) -> u16 {
         assert_eq!(CHECKSUM_SIZE, 2); // Check size of ChecksumType
 
