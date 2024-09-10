@@ -168,32 +168,9 @@ impl Packet {
         bytes
     }
 
-    /// The `calculate_checksum()` function does all the validation magic and
-    /// is fairly simple. The checksum is just the (header + data) being
-    /// read two bytes at a time and added together. Do some bit magic and
-    /// it's done.
-    ///
-    /// At the top of this function is an `assert_eq` to make sure the
-    /// `CHECKSUM_SIZE` is still equal to 2 just in case it gets changed and
-    /// this implementation doesn't handle that. There is also a unit test for
-    /// that same value as it determines a ton on how the checksum is computed.
     // TODO: Replace with CRC-16
     pub fn calculate_checksum(data: &[u8]) -> u16 {
-        assert_eq!(CHECKSUM_SIZE, 2); // Check size of ChecksumType
-
-        let mut checksum: u32 = 0;
-
-        for chunk in data.chunks(2) {
-            let word = match chunk.len() {
-                2 => (chunk[0] as u16) << 8 | (chunk[1] as u16),
-                1 => (chunk[0] as u16) << 8,
-                _ => 0,
-            };
-            checksum = checksum.wrapping_add(word as u32);
-        }
-
-        checksum = (checksum & 0xFFFF) + (checksum >> 16);
-        !checksum as u16
+        unimplemented!()
     }
 }
 
