@@ -54,10 +54,8 @@ impl Packet {
             checksum: None,
         };
 
-        let encoded_packet = packet.encode_packet();
-        let len = encoded_packet.len();
-        let (c_byte1, c_byte2) = (encoded_packet[len - CHECKSUM_SIZE], encoded_packet[len - 1]);
-        packet.checksum = Some(((c_byte1 as u16) << 8) | c_byte2 as u16);
+        let partial = packet.prechecksum_encode_packet();
+        packet.checksum = Some(Packet::calculate_checksum(&partial));
         packet
     }
 
@@ -82,6 +80,17 @@ impl Packet {
         }
     }
 
+    pub fn prechecksum_encode_packet(&self) -> Vec<u8> {
+        let header = self.generate_header();
+        let total_size = header.len() + self.data.len() + CHECKSUM_SIZE;
+        let mut bytes: Vec<u8> = Vec::with_capacity(total_size);
+
+        bytes.extend_from_slice(&header);
+        bytes.extend_from_slice(&self.data);
+        bytes.extend_from_slice(&[0, 0]);
+        bytes
+    }
+
     /// The `encode_packet()` function will return a vector of `u8` that
     /// represents the original packet. This is used to send the data
     /// accross the network.
@@ -90,19 +99,12 @@ impl Packet {
     /// while organizing everything into the final structure.
     // TODO: Fix docs
     pub fn encode_packet(&self) -> Vec<u8> {
-        let header = self.generate_header();
-        let total_size = header.len() + self.data.len() + CHECKSUM_SIZE;
-        let mut bytes: Vec<u8> = Vec::with_capacity(total_size);
-
-        bytes.extend_from_slice(&header);
-
-        if !self.data.is_empty() {
-            bytes.extend_from_slice(&self.data);
-        }
+        let mut bytes = self.prechecksum_encode_packet();
+        let len = bytes.len();
 
         match self.checksum {
             Some(checksum) => {
-                bytes.extend_from_slice(&checksum.to_be_bytes());
+                bytes[len - CHECKSUM_SIZE..].copy_from_slice(&checksum.to_be_bytes());
                 bytes
             }
             None => {
@@ -160,9 +162,9 @@ impl Packet {
         let data = packet[header_size..header_size + length as usize - CHECKSUM_SIZE].to_vec();
 
         // Compute and validate the checksum
-        let checksum_validation = Packet::calculate_checksum(packet);
-        if checksum_validation != 0 {
-            return Err(PacketError::ChecksumMismatch(checksum_validation));
+        let calculated_checksum = Packet::calculate_checksum(packet);
+        if calculated_checksum != 0 {
+            return Err(PacketError::ChecksumIncorrect(calculated_checksum));
         }
 
         Ok(Packet::from_data(
@@ -234,7 +236,7 @@ pub enum PacketError {
     LengthMismatch(usize, usize),
     /// This error handles when the checksums do not match preventing any
     /// corrupted packets from being processed.
-    ChecksumMismatch(u16),
+    ChecksumIncorrect(u16),
     /// This error handles when the `PacketType::to_u8` function cannot
     /// match the provided `u8` to a `PacketType`.
     InvalidPacketType(u8),
