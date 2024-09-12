@@ -22,7 +22,8 @@ pub struct Packet {
     /// always be `0xAD01`.
     magic_number: u16,
     /// The version will increment on packet implementation changes.
-    /// This includes changes to the `PacketType` enum.
+    /// Pretty much all changes that change the way the data is read or written
+    /// must have the version incremented.
     version: u8,
     /// An enum that detemines how to handle a packet. This enum will be
     /// converted to a number in the range 0-255 (8-bit) when assembling
@@ -32,10 +33,10 @@ pub struct Packet {
     /// The length is computed by doing `data + checksum`.
     length: u16,
     /// The data being passed around. It's a vector of 8-bit values.
-    data: Vec<u8>,
+    data: Vec<u8>, // TODO: Switch to Box since data doesn't change nor clone
     /// The checksum is used to validate that the packet hasen't been corupted
     /// in any way.
-    checksum: Option<u16>, // TODO: Oh lord. Here we go again
+    checksum: Option<u16>,
 }
 
 impl Packet {
@@ -43,16 +44,20 @@ impl Packet {
     /// `PacketType` and data (`[u8]`). It can then be converted to binary
     /// for sending over the internet.
     pub fn new(p_type: PacketType, data: Vec<u8>) -> Self {
+        // TODO: Add error handling to length
         let mut packet = Packet {
             magic_number: MAGIC_NUMBER,
             version: VERSION,
             p_type,
             length: (data.len() + CHECKSUM_SIZE) as u16,
             data,
-            checksum: 0, // Temp value
+            checksum: None,
         };
 
-        packet.checksum = Packet::calculate_checksum(&packet.encode_packet());
+        let encoded_packet = packet.encode_packet();
+        let len = encoded_packet.len();
+        let (c_byte1, c_byte2) = (encoded_packet[len - CHECKSUM_SIZE], encoded_packet[len - 1]);
+        packet.checksum = Some(((c_byte1 as u16) << 8) | c_byte2 as u16);
         packet
     }
 
@@ -65,7 +70,7 @@ impl Packet {
         p_type: PacketType,
         length: u16,
         data: Vec<u8>,
-        checksum: u16,
+        checksum: Option<u16>,
     ) -> Self {
         Self {
             magic_number,
@@ -83,15 +88,31 @@ impl Packet {
     ///
     /// This will convert any none numerical data types into numerical ones
     /// while organizing everything into the final structure.
+    // TODO: Fix docs
     pub fn encode_packet(&self) -> Vec<u8> {
-        let mut bytes: Vec<u8> = self.generate_header();
+        let header = self.generate_header();
+        let total_size = header.len() + self.data.len() + CHECKSUM_SIZE;
+        let mut bytes: Vec<u8> = Vec::with_capacity(total_size);
+
+        bytes.extend_from_slice(&header);
 
         if !self.data.is_empty() {
             bytes.extend_from_slice(&self.data);
         }
 
-        bytes.extend_from_slice(&self.checksum.to_be_bytes());
-        bytes
+        match self.checksum {
+            Some(checksum) => {
+                bytes.extend_from_slice(&checksum.to_be_bytes());
+                bytes
+            }
+            None => {
+                bytes.extend_from_slice(&[0, 0]);
+                let checksum = Packet::calculate_checksum(&bytes);
+                let len = bytes.len();
+                bytes[len - CHECKSUM_SIZE..].copy_from_slice(&checksum.to_be_bytes());
+                bytes
+            }
+        }
     }
 
     /// The `decode_packet` function takes a slice of `u8` values and attempt
@@ -139,10 +160,9 @@ impl Packet {
         let data = packet[header_size..header_size + length as usize - CHECKSUM_SIZE].to_vec();
 
         // Compute and validate the checksum
-        let checksum = u16::from_be_bytes([packet[total_len - 2], packet[total_len - 1]]);
         let checksum_validation = Packet::calculate_checksum(packet);
         if checksum_validation != 0 {
-            return Err(PacketError::ChecksumMismatch(checksum, computed_checksum));
+            return Err(PacketError::ChecksumMismatch(checksum_validation));
         }
 
         Ok(Packet::from_data(
@@ -151,7 +171,7 @@ impl Packet {
             p_type,
             length,
             data,
-            checksum,
+            None,
         ))
     }
 
@@ -214,7 +234,7 @@ pub enum PacketError {
     LengthMismatch(usize, usize),
     /// This error handles when the checksums do not match preventing any
     /// corrupted packets from being processed.
-    ChecksumMismatch(u16, u16),
+    ChecksumMismatch(u16),
     /// This error handles when the `PacketType::to_u8` function cannot
     /// match the provided `u8` to a `PacketType`.
     InvalidPacketType(u8),
