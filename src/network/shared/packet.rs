@@ -166,6 +166,10 @@ impl Packet {
         if calculated_checksum != 0 {
             return Err(PacketError::ChecksumIncorrect(calculated_checksum));
         }
+        let packet_checksum = u16::from_be_bytes([
+            packet[packet.len() - CHECKSUM_SIZE],
+            packet[packet.len() - 1],
+        ]);
 
         Ok(Packet::from_data(
             magic_number,
@@ -173,7 +177,7 @@ impl Packet {
             p_type,
             length,
             data,
-            None,
+            Some(packet_checksum),
         ))
     }
 
