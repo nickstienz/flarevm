@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use crate::create_packet_types;
 
 /// The magic number that will not change. It will always be `0xAD01` and will
@@ -33,7 +35,7 @@ pub struct Packet {
     /// The length is computed by doing `data + checksum`.
     length: u16,
     /// The data being passed around. It's a vector of 8-bit values.
-    data: Vec<u8>, // TODO: Switch to Box since data doesn't change nor clone
+    data: Box<[u8]>,
     /// The checksum is used to validate that the packet hasen't been corupted
     /// in any way.
     checksum: Option<u16>,
@@ -43,7 +45,7 @@ impl Packet {
     /// The `new()` function returns a new packet based on the given
     /// `PacketType` and data (`[u8]`). It can then be converted to binary
     /// for sending over the internet.
-    pub fn new(p_type: PacketType, data: Vec<u8>) -> Self {
+    pub fn new(p_type: PacketType, data: Box<[u8]>) -> Self {
         // TODO: Add error handling to length
         let mut packet = Packet {
             magic_number: MAGIC_NUMBER,
@@ -67,7 +69,7 @@ impl Packet {
         version: u8,
         p_type: PacketType,
         length: u16,
-        data: Vec<u8>,
+        data: Box<[u8]>,
         checksum: Option<u16>,
     ) -> Self {
         Self {
@@ -159,7 +161,8 @@ impl Packet {
         }
 
         // Grab all the data but leave the last to bytes as they are the checksum
-        let data = packet[header_size..header_size + length as usize - CHECKSUM_SIZE].to_vec();
+        let data: Box<[u8]> =
+            Box::new(packet[header_size..header_size + length as usize - CHECKSUM_SIZE]);
 
         // Compute and validate the checksum
         let calculated_checksum = Packet::calculate_checksum(packet);
