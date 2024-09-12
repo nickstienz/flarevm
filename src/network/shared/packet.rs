@@ -80,7 +80,7 @@ impl Packet {
         }
     }
 
-    pub fn prechecksum_encode_packet(&self) -> Vec<u8> {
+    fn prechecksum_encode_packet(&self) -> Vec<u8> {
         let header = self.generate_header();
         let total_size = header.len() + self.data.len() + CHECKSUM_SIZE;
         let mut bytes: Vec<u8> = Vec::with_capacity(total_size);
