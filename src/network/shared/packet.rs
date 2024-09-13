@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use crate::create_packet_types;
 
 /// The magic number that will not change. It will always be `0xAD01` and will
@@ -45,14 +43,14 @@ impl Packet {
     /// The `new()` function returns a new packet based on the given
     /// `PacketType` and data (`[u8]`). It can then be converted to binary
     /// for sending over the internet.
-    pub fn new(p_type: PacketType, data: Box<[u8]>) -> Self {
+    pub fn new(p_type: PacketType, data: &[u8]) -> Self {
         // TODO: Add error handling to length
         let mut packet = Packet {
             magic_number: MAGIC_NUMBER,
             version: VERSION,
             p_type,
             length: (data.len() + CHECKSUM_SIZE) as u16,
-            data,
+            data: Box::from(data),
             checksum: None,
         };
 
@@ -161,8 +159,7 @@ impl Packet {
         }
 
         // Grab all the data but leave the last to bytes as they are the checksum
-        let data: Box<[u8]> =
-            Box::new(packet[header_size..header_size + length as usize - CHECKSUM_SIZE]);
+        let data = Box::from(&packet[header_size..header_size + length as usize - CHECKSUM_SIZE]);
 
         // Compute and validate the checksum
         let calculated_checksum = Packet::calculate_checksum(packet);
@@ -300,7 +297,7 @@ mod tests {
 
     #[test]
     fn create_empty_packet_as_bytes() {
-        let p = Packet::new(PacketType::None, Vec::new());
+        let p = Packet::new(PacketType::None, &[]);
 
         assert_eq!(
             p.encode_packet(),
