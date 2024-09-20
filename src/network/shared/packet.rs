@@ -1,5 +1,7 @@
 use crate::create_packet_types;
 
+// TODO: Most of the docs are out of date due to major updates!
+
 /// The magic number that will not change. It will always be `0xAD01` and will
 /// be used to identify that it is a packet made for the VM.
 const MAGIC_NUMBER: u16 = 0xAD01;
