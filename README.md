@@ -1,5 +1,6 @@
 # Flare VM (FVM)
 
+> I'm switching from helix to neovim, this might take a while...
 > This project is being rewritten from scratch ;-;
 
 A VM written in Rust designed to teach low-level programming 
