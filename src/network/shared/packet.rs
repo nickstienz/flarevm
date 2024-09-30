@@ -119,6 +119,12 @@ impl Packet {
         }
     }
 
+    // TODO: Add this function. It does not create a Packet struct and will
+    // most likely go unused unless testing or special cases.
+    pub fn quick_encode(p_type: PacketType, data: &[u8]) -> Box<[u8]> {
+        todo!()
+    }
+
     /// The `decode_packet` function takes a slice of `u8` values and attempt
     /// to convert it into a new packet.
     ///
