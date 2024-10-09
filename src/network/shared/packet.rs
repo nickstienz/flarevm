@@ -166,7 +166,7 @@ impl Packet {
             return Err(PacketError::LengthMismatch(packet.len(), total_len));
         }
 
-        // Grab all the data but leave the last to bytes as they are the checksum
+        // Grab all the data but leave the last two bytes as they are the checksum
         let data = Box::from(&packet[header_size..header_size + length as usize - CHECKSUM_SIZE]);
 
         // Compute and validate the checksum
