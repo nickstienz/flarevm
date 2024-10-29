@@ -34,6 +34,7 @@ pub struct Packet {
     /// The length represents how many bytes come after the header.
     /// The length is computed by doing `data + checksum`.
     length: u16,
+    // TODO: Fix `data` docs
     /// The data being passed around. It's a vector of 8-bit values.
     data: Box<[u8]>,
     /// The checksum is used to validate that the packet hasen't been corupted
