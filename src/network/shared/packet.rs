@@ -120,10 +120,32 @@ impl Packet {
         }
     }
 
-    // TODO: Add this function. It does not create a Packet struct and will
-    // most likely go unused unless testing or special cases.
+    // TODO: Ok, this works but isn't fun with all it's random magic numbers.
+    // I'm prob gonna rework this whole packet implementation to just
+    // be a bit easier and simple to use. Not much will change, just some
+    // making it easier to maintain and read.
     pub fn quick_encode(p_type: PacketType, data: &[u8]) -> Box<[u8]> {
-        todo!()
+        let mut packet: Vec<u8> = Vec::with_capacity(6 + data.len() + CHECKSUM_SIZE);
+
+        packet.push((MAGIC_NUMBER >> 8) as u8);
+        packet.push((MAGIC_NUMBER & 0xFF) as u8);
+        packet.push(VERSION);
+        packet.push(p_type as u8);
+
+        let length = (data.len() + CHECKSUM_SIZE) as u16;
+        packet.push((length >> 8) as u8);
+        packet.push((length & 0xFF) as u8);
+
+        packet.extend_from_slice(data);
+        packet.extend_from_slice(&[0, 0]);
+
+        let checksum = Self::calculate_checksum(&packet);
+
+        let total_len = packet.len();
+        packet[total_len - 2] = (checksum >> 8) as u8;
+        packet[total_len - 1] = (checksum & 0xFF) as u8;
+
+        Box::from(packet)
     }
 
     /// The `decode_packet` function takes a slice of `u8` values and attempt
