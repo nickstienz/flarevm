@@ -3,7 +3,7 @@ use network::shared::packet::{Packet, PacketType};
 pub mod network;
 
 fn main() {
-    let p = Packet::quick_encode(
+    let p = Packet::encode(
         PacketType::None,
         &[0x01, 0x02, 0x03, 0x04, 0xA3, 0x17, 0xDC, 0x0A],
     );

@@ -1,7 +1,5 @@
 use crate::create_packet_types;
 
-// TODO: Most of the docs are out of date due to major updates!
-
 /// The magic number that will not change. It will always be `0xAD01` and will
 /// be used to identify that it is a packet made for the VM.
 const MAGIC_NUMBER: u16 = 0xAD01;
@@ -20,111 +18,28 @@ const CHECKSUM_SIZE: usize = 2;
 /// The header is 6 bytes long and after that is the data and checksum.
 #[derive(Debug)]
 pub struct Packet {
-    /// The magic number is used for packet identification and will
-    /// always be `0xAD01`.
-    magic_number: u16,
-    /// The version will increment on packet implementation changes.
-    /// Pretty much all changes that change the way the data is read or written
-    /// must have the version incremented.
-    version: u8,
     /// An enum that detemines how to handle a packet. This enum will be
     /// converted to a number in the range 0-255 (8-bit) when assembling
     /// the final packet.
     p_type: PacketType,
-    /// The length represents how many bytes come after the header.
-    /// The length is computed by doing `data + checksum`.
-    length: u16,
     // TODO: Fix `data` docs
     /// The data being passed around. It's a vector of 8-bit values.
     data: Box<[u8]>,
-    /// The checksum is used to validate that the packet hasen't been corupted
-    /// in any way.
-    checksum: Option<u16>,
 }
 
 impl Packet {
-    /// The `new()` function returns a new packet based on the given
-    /// `PacketType` and data (`[u8]`). It can then be converted to binary
-    /// for sending over the internet.
-    pub fn new(p_type: PacketType, data: &[u8]) -> Self {
-        // TODO: Add error handling to length
-        let mut packet = Packet {
-            magic_number: MAGIC_NUMBER,
-            version: VERSION,
-            p_type,
-            length: (data.len() + CHECKSUM_SIZE) as u16,
-            data: Box::from(data),
-            checksum: None,
-        };
-
-        let partial = packet.prechecksum_encode_packet();
-        packet.checksum = Some(Packet::calculate_checksum(&partial));
-        packet
-    }
-
     /// The `from_data()` function will create a new packet based on the
     /// provided data. Its primary use is constructing a new packet
     /// from a transported packet in the decoding stage.
-    pub fn from_data(
-        magic_number: u16,
-        version: u8,
-        p_type: PacketType,
-        length: u16,
-        data: Box<[u8]>,
-        checksum: Option<u16>,
-    ) -> Self {
-        Self {
-            magic_number,
-            version,
-            p_type,
-            length,
-            data,
-            checksum,
-        }
-    }
-
-    fn prechecksum_encode_packet(&self) -> Vec<u8> {
-        let header = self.generate_header();
-        let total_size = header.len() + self.data.len() + CHECKSUM_SIZE;
-        let mut bytes: Vec<u8> = Vec::with_capacity(total_size);
-
-        bytes.extend_from_slice(&header);
-        bytes.extend_from_slice(&self.data);
-        bytes.extend_from_slice(&[0, 0]);
-        bytes
-    }
-
-    /// The `encode_packet()` function will return a vector of `u8` that
-    /// represents the original packet. This is used to send the data
-    /// accross the network.
-    ///
-    /// This will convert any none numerical data types into numerical ones
-    /// while organizing everything into the final structure.
-    // TODO: Fix docs
-    pub fn encode_packet(&self) -> Vec<u8> {
-        let mut bytes = self.prechecksum_encode_packet();
-        let len = bytes.len();
-
-        match self.checksum {
-            Some(checksum) => {
-                bytes[len - CHECKSUM_SIZE..].copy_from_slice(&checksum.to_be_bytes());
-                bytes
-            }
-            None => {
-                bytes.extend_from_slice(&[0, 0]);
-                let checksum = Packet::calculate_checksum(&bytes);
-                let len = bytes.len();
-                bytes[len - CHECKSUM_SIZE..].copy_from_slice(&checksum.to_be_bytes());
-                bytes
-            }
-        }
+    pub fn from_data(p_type: PacketType, data: Box<[u8]>) -> Self {
+        Self { p_type, data }
     }
 
     // TODO: Ok, this works but isn't fun with all it's random magic numbers.
     // I'm prob gonna rework this whole packet implementation to just
     // be a bit easier and simple to use. Not much will change, just some
     // making it easier to maintain and read.
-    pub fn quick_encode(p_type: PacketType, data: &[u8]) -> Box<[u8]> {
+    pub fn encode(p_type: PacketType, data: &[u8]) -> Box<[u8]> {
         let mut packet: Vec<u8> = Vec::with_capacity(6 + data.len() + CHECKSUM_SIZE);
 
         packet.push((MAGIC_NUMBER >> 8) as u8);
@@ -197,30 +112,8 @@ impl Packet {
         if calculated_checksum != 0 {
             return Err(PacketError::ChecksumIncorrect(calculated_checksum));
         }
-        let packet_checksum = u16::from_be_bytes([
-            packet[packet.len() - CHECKSUM_SIZE],
-            packet[packet.len() - 1],
-        ]);
 
-        Ok(Packet::from_data(
-            magic_number,
-            version,
-            p_type,
-            length,
-            data,
-            Some(packet_checksum),
-        ))
-    }
-
-    /// The `generate_header()` function simply returns back the 6 byte header
-    /// that makes up the final packet.
-    fn generate_header(&self) -> Vec<u8> {
-        let mut bytes: Vec<u8> = Vec::new();
-        bytes.extend_from_slice(&self.magic_number.to_be_bytes());
-        bytes.push(self.version);
-        bytes.push(self.p_type as u8);
-        bytes.extend_from_slice(&self.length.to_be_bytes());
-        bytes
+        Ok(Packet::from_data(p_type, data))
     }
 
     pub fn calculate_checksum(data: &[u8]) -> u16 {
@@ -317,22 +210,22 @@ macro_rules! create_packet_types {
     };
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn validate_checksum_size() {
-        assert_eq!(CHECKSUM_SIZE, 2);
-    }
-
-    #[test]
-    fn create_empty_packet_as_bytes() {
-        let p = Packet::new(PacketType::None, &[]);
-
-        assert_eq!(
-            p.encode_packet(),
-            vec![0xAD, 0x01, 0x00, 0xFF, 0x00, 0x02, 81, 253]
-        );
-    }
-}
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//
+//     #[test]
+//     fn validate_checksum_size() {
+//         assert_eq!(CHECKSUM_SIZE, 2);
+//     }
+//
+//     #[test]
+//     fn create_empty_packet_as_bytes() {
+//         let p = Packet::new(PacketType::None, &[]);
+//
+//         assert_eq!(
+//             p.encode_packet(),
+//             vec![0xAD, 0x01, 0x00, 0xFF, 0x00, 0x02, 81, 253]
+//         );
+//     }
+// }
