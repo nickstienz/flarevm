@@ -1,6 +1,7 @@
 use crate::create_packet_types;
 
 // TODO: Docs are either out of date or not complete.
+// TODO: Please make checksum better ;-; Also don't include it in the length
 
 /// The magic number that will not change. It will always be `0xAD01` and will
 /// be used to identify that it is the start of a packet and is made for
@@ -221,22 +222,19 @@ macro_rules! create_packet_types {
     };
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//
-//     #[test]
-//     fn validate_checksum_size() {
-//         assert_eq!(CHECKSUM_SIZE, 2);
-//     }
-//
-//     #[test]
-//     fn create_empty_packet_as_bytes() {
-//         let p = Packet::new(PacketType::None, &[]);
-//
-//         assert_eq!(
-//             p.encode_packet(),
-//             vec![0xAD, 0x01, 0x00, 0xFF, 0x00, 0x02, 81, 253]
-//         );
-//     }
-// }
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validate_checksum_size() {
+        assert_eq!(CHECKSUM_SIZE, 2);
+    }
+
+    #[test]
+    fn create_empty_packet_as_bytes() {
+        let p = Packet::encode(PacketType::None, &[]);
+
+        assert_eq!(p, vec![0xAD, 0x01, 0x00, 0xFF, 0x00, 0x02, 81, 253].into());
+    }
+}
