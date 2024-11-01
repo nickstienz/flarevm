@@ -28,6 +28,14 @@ pub struct Packet {
 }
 
 impl Packet {
+    pub fn get_p_type(&self) -> PacketType {
+        self.p_type
+    }
+
+    pub fn get_data(&self) -> &[u8] {
+        &self.data
+    }
+
     /// The `from_data()` function will create a new packet based on the
     /// provided data. Its primary use is constructing a new packet
     /// from a transported packet in the decoding stage.
