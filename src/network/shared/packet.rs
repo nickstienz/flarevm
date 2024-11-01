@@ -1,7 +1,10 @@
 use crate::create_packet_types;
 
+// TODO: Docs are either out of date or not complete.
+
 /// The magic number that will not change. It will always be `0xAD01` and will
-/// be used to identify that it is a packet made for the VM.
+/// be used to identify that it is the start of a packet and is made for
+/// the VM.
 const MAGIC_NUMBER: u16 = 0xAD01;
 /// Current version of the packet implementation
 const VERSION: u8 = 0;
@@ -12,7 +15,6 @@ const CHECKSUM_SIZE: usize = 2;
 /// The packet is used to send data between the server and client to
 /// interact with the VM.
 ///
-/// The structure of the packet is the same as the `Packet` struct.
 /// Most of the data is coded to specifically use big endian format.
 ///
 /// The header is 6 bytes long and after that is the data and checksum.
@@ -22,8 +24,6 @@ pub struct Packet {
     /// converted to a number in the range 0-255 (8-bit) when assembling
     /// the final packet.
     p_type: PacketType,
-    // TODO: Fix `data` docs
-    /// The data being passed around. It's a vector of 8-bit values.
     data: Box<[u8]>,
 }
 
@@ -43,27 +43,30 @@ impl Packet {
         Self { p_type, data }
     }
 
-    // TODO: Ok, this works but isn't fun with all it's random magic numbers.
-    // I'm prob gonna rework this whole packet implementation to just
-    // be a bit easier and simple to use. Not much will change, just some
-    // making it easier to maintain and read.
     pub fn encode(p_type: PacketType, data: &[u8]) -> Box<[u8]> {
         let mut packet: Vec<u8> = Vec::with_capacity(6 + data.len() + CHECKSUM_SIZE);
 
+        // Magic Number
         packet.push((MAGIC_NUMBER >> 8) as u8);
         packet.push((MAGIC_NUMBER & 0xFF) as u8);
+        // Version
         packet.push(VERSION);
+        // Packet Type
         packet.push(p_type as u8);
 
+        // Length
         let length = (data.len() + CHECKSUM_SIZE) as u16;
         packet.push((length >> 8) as u8);
         packet.push((length & 0xFF) as u8);
 
+        // Data
         packet.extend_from_slice(data);
+        // Zero-checksum
         packet.extend_from_slice(&[0, 0]);
 
         let checksum = Self::calculate_checksum(&packet);
 
+        // Checksum
         let total_len = packet.len();
         packet[total_len - 2] = (checksum >> 8) as u8;
         packet[total_len - 1] = (checksum & 0xFF) as u8;
