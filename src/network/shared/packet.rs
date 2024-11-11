@@ -18,7 +18,16 @@ const CHECKSUM_SIZE: usize = 2;
 ///
 /// Most of the data is coded to specifically use big endian format.
 ///
-/// The header is 6 bytes long and after that is the data and checksum.
+/// The header is 6 bytes long which is followed by the data and checksum.
+///
+/// | Parts        | Type  |
+/// |--------------|-------|
+/// | Magic Number | u16   |
+/// | Version      | u8    |
+/// | Packet Type  | u8    |
+/// | Length       | u16   |
+/// | Data         | \[u8] |
+/// | Checksum     | u16   |
 #[derive(Debug)]
 pub struct Packet<'a> {
     /// An enum that detemines how to handle a packet. This enum will be
