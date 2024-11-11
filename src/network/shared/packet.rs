@@ -20,27 +20,27 @@ const CHECKSUM_SIZE: usize = 2;
 ///
 /// The header is 6 bytes long and after that is the data and checksum.
 #[derive(Debug)]
-pub struct Packet {
+pub struct Packet<'a> {
     /// An enum that detemines how to handle a packet. This enum will be
     /// converted to a number in the range 0-255 (8-bit) when assembling
     /// the final packet.
     p_type: PacketType,
-    data: Box<[u8]>,
+    data: &'a [u8],
 }
 
-impl Packet {
+impl<'a> Packet<'a> {
     pub fn get_p_type(&self) -> PacketType {
         self.p_type
     }
 
     pub fn get_data(&self) -> &[u8] {
-        &self.data
+        self.data
     }
 
     /// The `from_data()` function will create a new packet based on the
     /// provided data. Its primary use is constructing a new packet
     /// from a transported packet in the decoding stage.
-    pub fn from_data(p_type: PacketType, data: Box<[u8]>) -> Self {
+    pub fn from_data(p_type: PacketType, data: &'a [u8]) -> Self {
         Self { p_type, data }
     }
 
@@ -117,7 +117,7 @@ impl Packet {
         }
 
         // Grab all the data but leave the last two bytes as they are the checksum
-        let data = Box::from(&packet[header_size..header_size + length as usize - CHECKSUM_SIZE]);
+        let data = &packet[header_size..header_size + length as usize - CHECKSUM_SIZE];
 
         // Compute and validate the checksum
         let calculated_checksum = Packet::calculate_checksum(packet);
