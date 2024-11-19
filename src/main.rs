@@ -3,9 +3,9 @@ use network::shared::packet::{Packet, PacketType};
 pub mod network;
 
 fn main() {
-    (0..1000000).for_each(|_| {
-        let _p = Packet::encode(PacketType::None, &[5]);
-        // println!("{:?}", p);
+    (0..=255).for_each(|x| {
+        let p = Packet::encode(PacketType::None, &[x]);
+        println!("{:?}", p);
     });
 
     // Encode
